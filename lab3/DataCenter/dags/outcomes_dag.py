@@ -12,6 +12,7 @@ from airflow.operators.python_operator import PythonOperator
 
 from etl_scripts.transform import transform_data
 from etl_scripts.ExtractDataFromAPItoGCS import main
+from etl_scripts.LoadDataToPostgres import load_data_to_postgres_main
 
 # AIRFLOW_HOME = os.environ.get('AIRFLOW_HOME', '/opt/airflow')
 # CREDS_TARGET_DIR = AIRFLOW_HOME + '/warm-physics-405522-a07e9b7bfc0d.json'
@@ -46,6 +47,23 @@ with DAG(
         transform_data_step = PythonOperator(task_id="TRANSFORM_DATA",
                                              python_callable=transform_data,)
 
+        load_dim_animals = PythonOperator(task_id="LOAD_DIM_ANIMALS",
+                                             python_callable=load_data_to_postgres_main,
+                                             op_kwargs={"file_name": 'dim_animal.csv', "table_name": 'dim_animals'},)
+
+        load_dim_outcome_types = PythonOperator(task_id="LOAD_DIM_OUTCOME_TYPES",
+                                             python_callable=load_data_to_postgres_main,
+                                             op_kwargs={"file_name": 'dim_outcome_types.csv', "table_name": 'dim_outcome_types'},)
+        
+        load_dim_dates = PythonOperator(task_id="LOAD_DIM_DATES",
+                                             python_callable=load_data_to_postgres_main,
+                                             op_kwargs={"file_name": 'dim_dates.csv', "table_name": 'dim_dates'},)
+        
+        load_fct_outcomes = PythonOperator(task_id="LOAD_FCT_OUTCOMES",
+                                             python_callable=load_data_to_postgres_main,
+                                             op_kwargs={"file_name": 'fct_outcomes.csv', "table_name": 'fct_outcomes'},)
+        
         end = BashOperator(task_id = "END", bash_command = "echo end")
 
-        start >> extract_api_data_to_gcs >> transform_data_step >> end
+        start >> extract_api_data_to_gcs >> transform_data_step >> [load_dim_animals, load_dim_outcome_types, load_dim_dates, load_fct_outcomes] >> end
+        
