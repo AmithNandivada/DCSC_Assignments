@@ -1,0 +1,6 @@
+Dataflow:
+
+1. ExtractDataFromAPItoGCS.py reads data from API and writes it to data folder with date and filename in the Google Cloud Storage Bucket (Staging area).
+2. transform.py reads the data from staging area and transforms it into various fact and dimension tables. Each table is written to the transform data folder in the Google Cloud Storage with it's filename identical to table name.
+3. LoadDataToPostgres.py takes two input arguments - filename and tablename, reads the data from transform data in GCS and writes the data to PostgreSQL table hosted on Cloud SQL. Data is also being truncated before the full load of the table.
+4. Airflow Orchestrates this entire process and the job is scheduled to run on a daily basis. 
